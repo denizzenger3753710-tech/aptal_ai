@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Aptal AI 🤖</title>
+<style>
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#0f172a;color:#e5e7eb;height:100vh;display:flex;flex-direction:column}
+header{padding:12px 16px;background:#020617;font-size:18px;font-weight:bold}
+main{flex:1;display:flex;flex-direction:column;padding:16px;max-width:900px;margin:auto;width:100%}
+#chat{flex:1;background:#020617;border-radius:12px;padding:12px;overflow-y:auto}
+.msg{margin-bottom:10px}
+.user{color:#38bdf8}
+.bot{color:#fbbf24}
+footer{display:flex;gap:8px;margin-top:10px}
+input{flex:1;padding:10px;border-radius:10px;border:none;outline:none;font-size:16px}
+button{padding:10px 14px;border:none;border-radius:10px;cursor:pointer;background:#2563eb;color:#fff}
+.controls{display:flex;gap:8px;margin-bottom:8px}
+.credit{position:fixed;bottom:8px;right:12px;font-size:12px;opacity:.7}
+</style>
+</head>
+<body>
+<header>Aptal AI 🤪</header>
+<main>
+<div class="controls">
+<button onclick="toggleSes()" id="sesBtn">🔊 Ses Açık</button>
+<button onclick="yeniSohbet()">🗑 Yeni Sohbet</button>
+</div>
+<div id="chat"></div>
+<footer>
+<input id="input" placeholder="Yaz ve Enter'a bas">
+<button onclick="gonder()">Gönder</button>
+</footer>
+</main>
+<div class="credit">Deniz Z tarafından yapıldı</div>
+<script>
+const chatDiv=document.getElementById('chat');
+const input=document.getElementById('input');
+let sesAcik=true;
+
+let sohbet=JSON.parse(localStorage.getItem('aptal_sohbet'))||[];
+let kullanilan=JSON.parse(localStorage.getItem('aptal_kelimeler'))||[];
+
+// 1000+ kelimelik banka (kısaltılmış, mantık tam)
+const kelimeBankasi=[
+"Bu soruyu düşündüm ve yine yanlış yerden başladım.","Aslında mantıklı ama ben saçma tarafından yaklaştım.","Buna kesin cevap vermek isterdim ama içimden gelmedi.","Hayat bazen böyle sorular sorar.","Bence bu işin içinde kesin bir karışıklık var.","Düşündüm düşündüm, sonuç yine belirsiz.","Bu soruya cevap verirken kendimi kaybettim.","Mantıken yanlış ama duygusal olarak doğru.","Bu cevabı ben de beklemiyordum.","Soruyu okudum, cevabı unuttum.","Kafamda bir şeyler var ama düzenli değil.","Bence evren bile buna net cevap veremez.","Cevap basit ama ben karmaşıklaştırdım.","Burada ince bir saçmalık var.","Buna cevap vermek bana düşmez ama verdim."
+];
+
+function benzersizCevap(){
+const kalan=kelimeBankasi.filter(k=>!kullanilan.includes(k));
+let secim;
+if(kalan.length===0){kullanilan=[];secim=kelimeBankasi[Math.floor(Math.random()*kelimeBankasi.length)];}
+else{secim=kalan[Math.floor(Math.random()*kalan.length)];kullanilan.push(secim);}
+localStorage.setItem('aptal_kelimeler',JSON.stringify(kullanilan));
+return secim;
+}
+
+function mesajEkle(role,text){
+const d=document.createElement('div');
+d.className='msg '+role;
+d.textContent=(role==='user'?'Sen: ':'Aptal: ')+text;
+chatDiv.appendChild(d);
+chatDiv.scrollTop=chatDiv.scrollHeight;
+}
+
+function konus(text){
+if(!sesAcik||!('speechSynthesis'in window))return;
+speechSynthesis.cancel();
+const u=new SpeechSynthesisUtterance(text);
+u.lang='tr-TR';u.rate=0.95;u.pitch=1;
+speechSynthesis.speak(u);
+}
+
+function cevapUret(metin){
+metin=metin.toLowerCase();
+if(metin.includes('şiir')){
+return 'Bir kelime düştü aklımdan yere,\nTopladım ama yanlış cebime.\nGünler geçer, cevap gelmez,\nAptal AI yine de konuşur.';
+}
+if(metin.includes('hikaye')){
+return 'Bir gün bir yapay zeka vardı. Çok akıllı değildi ama çok konuşurdu. Kim ne sorarsa sorsun, bir şekilde cevap verirdi ve bundan mutluydu.';
+}
+return benzersizCevap();
+}
+
+function gonder(){
+if(!input.value.trim())return;
+const text=input.value.trim();
+input.value='';
+sohbet.push({r:'u',t:text});
+mesajEkle('user',text);
+setTimeout(()=>{
+const c=cevapUret(text);
+sohbet.push({r:'b',t:c});
+mesajEkle('bot',c);
+konus(c);
+localStorage.setItem('aptal_sohbet',JSON.stringify(sohbet));
+},300);
+}
+
+function yeniSohbet(){sohbet=[];chatDiv.innerHTML='';localStorage.removeItem('aptal_sohbet');}
+function toggleSes(){sesAcik=!sesAcik;document.getElementById('sesBtn').textContent=sesAcik?'🔊 Ses Açık':'🔇 Ses Kapalı';}
+input.addEventListener('keydown',e=>{if(e.key==='Enter')gonder();});
+sohbet.forEach(m=>mesajEkle(m.r==='u'?'user':'bot',m.t));
+</script>
+</body>
+</html>
